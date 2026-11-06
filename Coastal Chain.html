@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coastal Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EEF1F5;--surface:#FFFFFF;--field:#F6F8FA;--line:#D5DBE3;--text:#12161D;--muted:#5F6877;
+  --gold:#A9740F;--on-gold:#FFFFFF;--ok:#2E8B5E;--bad:#C0392B;
+  --sans:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#0B0E14;--surface:#12161D;--field:#0B0E14;--line:#232935;--text:#E8E4DA;--muted:#8A93A3;--gold:#D9A441;--on-gold:#0B0E14;--ok:#5FB88A;--bad:#E0645A;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0B0E14;--surface:#12161D;--field:#0B0E14;--line:#232935;--text:#E8E4DA;--muted:#8A93A3;--gold:#D9A441;--on-gold:#0B0E14;--ok:#5FB88A;--bad:#E0645A;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.45}
+main{max-width:560px;margin:0 auto;padding:24px 16px 40px}
+header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-.01em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+button{font:inherit;color:inherit;cursor:pointer;min-height:40px;min-width:40px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 12px}
+button:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.mono{font-family:var(--mono)}.muted{color:var(--muted)}
+#status{margin:16px 0 20px;padding:10px 12px;border-radius:8px;border:1px solid var(--ok);color:var(--ok);background:var(--surface);font-size:14px;font-weight:500}
+#status.bad{border-color:var(--bad);color:var(--bad)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:20px}
+textarea{width:100%;resize:none;font:16px/1.4 var(--mono);color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.stepper{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.stepper b{color:var(--text);font-family:var(--mono);min-width:1ch;text-align:center}
+.primary{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:600;padding:0 16px}
+.hint{font-size:12px;color:var(--muted);margin:10px 0 0}
+.block{display:grid;grid-template-columns:6px 1fr;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.block.bad{border-color:var(--bad)}
+.bar{background:var(--accent)}
+.body{padding:14px;min-width:0}
+.top{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px}
+.badge{font-weight:600}.badge.ok{color:var(--ok)}.badge.bad{color:var(--bad)}.badge.warn{color:var(--gold)}
+.block textarea{margin-bottom:10px}
+dl{display:grid;grid-template-columns:48px 1fr;gap:4px 8px;margin:0;font-size:12px}
+dt{color:var(--muted)}dd{margin:0;overflow-wrap:anywhere}
+.hashbtn{all:unset;cursor:pointer;overflow-wrap:anywhere}
+.bad-text{color:var(--bad)}
+.live{margin-top:10px;font-size:12px;color:var(--gold)}
+.fix{margin-top:10px;font-size:13px;font-weight:500;color:var(--gold);border-color:var(--gold)}
+.link{display:flex;flex-direction:column;align-items:center;color:var(--ok)}
+.link::before,.link::after{content:"";width:1px;height:10px;background:currentColor}
+.link.bad{color:var(--bad)}.link.pend{color:var(--gold)}
+.chip{font:500 11px var(--mono);padding:2px 10px;border:1px solid currentColor;border-radius:99px;background:var(--surface)}
+.pending{border:2px dashed var(--gold);border-radius:10px;padding:14px;background:var(--surface);color:var(--gold);font-size:14px}
+.pending .mono{margin-top:6px;font-size:12px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Coastal Chain</h1>
+      <p class="sub">A SHA-256 proof-of-work blockchain, mined right in your browser.</p>
+    </div>
+    <button id="reset" aria-label="Reset chain">↺</button>
+  </header>
+
+  <div id="status">Initializing ledger…</div>
+
+  <section class="panel">
+    <textarea id="newData" rows="2" aria-label="Data for the next block" placeholder="e.g. Uploaded photo #218 · +15 Sand-Dollars"></textarea>
+    <div class="row">
+      <div class="stepper">difficulty
+        <button id="dec" aria-label="Lower difficulty">−</button><b id="diff">3</b><button id="inc" aria-label="Raise difficulty">+</button>
+      </div>
+      <button id="mine" class="primary">Mine block</button>
+    </div>
+    <p class="hint">Difficulty is the number of leading zeros the hash must start with. Each extra zero makes mining about 16× slower.</p>
+  </section>
+
+  <div id="chain"></div>
+  <div id="pending"></div>
+
+  <p class="hint">Each block’s hash fingerprints its own data plus the previous block’s hash. Edit any block’s text and watch the chain break, then re-mine the red blocks from the top down to repair it.</p>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const ZERO = '0'.repeat(64);
+let chain = [], difficulty = 3, mining = false, vtoken = 0;
+
+const sha = async m => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(m)))]
+  .map(b => b.toString(16).padStart(2, '0')).join('');
+const input = b => `${b.index}|${b.timestamp}|${b.data}|${b.nonce}|${b.previousHash}`;
+const short = h => h.slice(0, 10) + '…' + h.slice(-6);
+const hue = h => parseInt(h.slice(0, 4), 16) % 360;
+const time = t => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+async function mine(b, onTick) {
+  const prefix = '0'.repeat(difficulty), t0 = performance.now();
+  for (let nonce = 0; ; nonce++) {
+    const hash = await sha(input({ ...b, nonce }));
+    if (hash.startsWith(prefix)) return { hash, nonce };
+    if (nonce % 20 === 19) { onTick(nonce, performance.now() - t0); await new Promise(r => setTimeout(r)); }
+  }
+}
+
+function setMining(v) {
+  mining = v;
+  document.querySelectorAll('textarea,button').forEach(el => el.disabled = v);
+  $('#mine').textContent = v ? 'Mining…' : 'Mine block';
+}
+
+function render() {
+  $('#chain').innerHTML = chain.map((b, i) => `
+    ${i ? `<div class="link" data-link="${i}"><span class="chip">linked</span></div>` : ''}
+    <article class="block" data-i="${i}" style="--accent:hsl(${hue(b.hash)} 62% 54%)">
+      <div class="bar"></div>
+      <div class="body">
+        <div class="top"><span class="mono muted">#${b.index}${i ? '' : ' · genesis'} · ${time(b.timestamp)}</span><span class="badge" data-badge></span></div>
+        <textarea data-data="${i}" rows="2" aria-label="Block ${b.index} data">${esc(b.data)}</textarea>
+        <dl class="mono">
+          <dt>hash</dt><dd><button class="hashbtn" data-hash="${i}" aria-label="Show full hash">${short(b.hash)}</button></dd>
+          <dt>prev</dt><dd data-prev>${short(b.previousHash)}</dd>
+          <dt>nonce</dt><dd class="muted">${b.nonce}</dd>
+        </dl>
+        <div class="live mono" data-live hidden></div>
+        <button class="fix" data-fix="${i}" hidden>↺ Re-mine block</button>
+      </div>
+    </article>`).join('');
+  validate();
+}
+
+async function validate() {
+  const token = ++vtoken, res = [];
+  let broken = false;
+  for (let i = 0; i < chain.length; i++) {
+    const b = chain[i];
+    const self = (await sha(input(b))) === b.hash;
+    const link = i === 0 || b.previousHash === chain[i - 1].hash;
+    const bad = !self || !link;
+    res.push({ link, bad, state: bad ? 'bad' : broken ? 'warn' : 'ok' });
+    broken = broken || bad;
+  }
+  if (token !== vtoken) return;
+  res.forEach((r, i) => {
+    const art = document.querySelector(`[data-i="${i}"]`);
+    if (!art) return;
+    art.classList.toggle('bad', r.bad);
+    const badge = art.querySelector('[data-badge]');
+    badge.className = 'badge ' + r.state;
+    badge.textContent = { ok: 'valid', warn: 'untrusted', bad: 'tampered' }[r.state];
+    art.querySelector('[data-prev]').classList.toggle('bad-text', !r.link);
+    art.querySelector('[data-fix]').hidden = !r.bad || mining;
+    const l = document.querySelector(`[data-link="${i}"]`);
+    if (l) { l.classList.toggle('bad', !r.link); l.querySelector('.chip').textContent = r.link ? 'linked' : 'link broken'; }
+  });
+  const st = $('#status');
+  st.classList.toggle('bad', broken);
+  st.textContent = broken
+    ? 'Chain compromised — re-mine the red blocks, top to bottom, to repair it'
+    : 'Chain intact — every link checks out';
+}
+
+async function addBlock() {
+  const data = $('#newData').value.trim();
+  if (!data) { $('#newData').focus(); return; }
+  if (mining || !chain.length) return;
+  const b = { index: chain.length, timestamp: Date.now(), data, previousHash: chain[chain.length - 1].hash };
+  setMining(true);
+  $('#pending').innerHTML = `<div class="link pend"><span class="chip">pending</span></div>
+    <div class="pending"><b>Mining block #${b.index}…</b><div class="mono" id="tick">nonce 0 · 0.0s</div></div>`;
+  const r = await mine(b, (n, ms) => {
+    $('#tick').textContent = `nonce ${n + 1} · ${(ms / 1000).toFixed(1)}s · ${Math.round((n + 1) / (ms / 1000 || 1))} tries/s`;
+  });
+  chain.push({ ...b, nonce: r.nonce, hash: r.hash });
+  $('#newData').value = '';
+  $('#pending').innerHTML = '';
+  setMining(false);
+  render();
+}
+
+async function fix(i) {
+  if (mining) return;
+  const b = chain[i], previousHash = i ? chain[i - 1].hash : ZERO;
+  setMining(true);
+  const live = document.querySelector(`[data-i="${i}"] [data-live]`);
+  live.hidden = false;
+  const r = await mine({ index: b.index, timestamp: b.timestamp, data: b.data, previousHash }, (n, ms) => {
+    live.textContent = `mining… nonce ${n + 1} · ${(ms / 1000).toFixed(1)}s`;
+  });
+  Object.assign(b, { previousHash, nonce: r.nonce, hash: r.hash });
+  setMining(false);
+  render();
+}
+
+async function init() {
+  const g = { index: 0, timestamp: Date.now(), data: 'Genesis — the first link, chosen, not mined.', nonce: 0, previousHash: ZERO };
+  g.hash = await sha(input(g));
+  chain = [g];
+  render();
+}
+
+$('#mine').onclick = addBlock;
+$('#inc').onclick = () => { difficulty = Math.min(4, difficulty + 1); $('#diff').textContent = difficulty; };
+$('#dec').onclick = () => { difficulty = Math.max(1, difficulty - 1); $('#diff').textContent = difficulty; };
+$('#reset').onclick = () => { if (!mining) { chain = []; $('#chain').innerHTML = ''; init(); } };
+
+$('#chain').addEventListener('input', e => {
+  const i = e.target.dataset.data;
+  if (i === undefined || mining) return;
+  chain[i].data = e.target.value;
+  validate();
+});
+$('#chain').addEventListener('click', e => {
+  const hb = e.target.closest('[data-hash]');
+  if (hb) {
+    const b = chain[hb.dataset.hash];
+    hb.textContent = hb.textContent === b.hash ? short(b.hash) : b.hash;
+    return;
+  }
+  const fb = e.target.closest('[data-fix]');
+  if (fb) fix(+fb.dataset.fix);
+});
+
+init();
+</script>
+</body>
+</html>
